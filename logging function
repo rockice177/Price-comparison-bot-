@@ -1,0 +1,38 @@
+import logging
+import requests
+from bs4 import BeautifulSoup
+
+logging.basicConfig(filename="item_log.log", level=logging.INFO)
+
+def check_prices(url1, url2, item_name):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+
+    # Get HTML content from Amazon
+    r = requests.get(url1, headers=headers)
+    soup1 = BeautifulSoup(r.content, 'html.parser')
+
+    # Get HTML content from Barnes & Noble
+    r = requests.get(url2, headers=headers)
+    soup2 = BeautifulSoup(r.content, 'html.parser')
+
+    # Find all book titles on Amazon
+    books1 = soup1.find_all('span', {'class': 'a-size-medium a-color-base a-text-normal'})
+    prices1 = soup1.find_all('span', {'class': 'a-price-whole'})
+    category1 = soup1.find_all('span', {'class': 'a-size-base a-color-secondary'})
+    genre1 = soup1.find_all('span', {'class': 'a-size-base a-color-secondary'})
+    rating1 = soup1.find_all('div', {'class': 'a-section a-text-center'})
+    # Find all book titles on Barnes & Noble
+    books2 = soup2.find_all('h3', {'class': 'title'})
+    prices2 = soup2.find_all('span', {'class': 'price'})
+    category2 = soup2.find_all('span', {'class': 'a-size-base a-color-secondary'})
+    genre2 = soup2.find_all('span', {'class': 'a-size-base a-color-secondary'})
+    rating2 = soup2.find_all('div', {'class': 'a-section a-text-center'})
+
+    for i in range(len(books1)):
+        for j in range(len(books2)):
+            if books1[i].text == books2[j].text and books1[i].text == item_name:
+                price1 = int(prices1[i].text.replace(',',''))
+                price2 = int(prices2[j].text.replace('$',''))
+                if abs(price1 - price2) > 10:
+                    print(books1[i].text, ": Amazon: $",price1, " | Barnes & Noble: $",price2, " | Category: ", category1[i].text," | Genre: ", genre1[i].text," | Rating: ", rating1[i].text)
+                    logging.info("Item found: " + books1[i].text + " | Amazon: $" + str(price1) + " | Barnes & Noble: $" + str(price
